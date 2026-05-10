@@ -49,6 +49,7 @@
       <div class="row text-right quick-bar">
         <button class="btn-ghost btn-mute" type="button" @click="toggleMute"
           :title="muted ? '开启音效' : '静音'">{{muted ? '♪ 静音' : '♪ 音效'}}</button>
+        <button class="btn-ghost" type="button" @click="openStats">我的战绩</button>
         <button @click="quickJoin">快速入局</button>
       </div>
       <div v-for="desk in desks" class="desk" :class="{'desk-busy': deskBusyCount(desk) > 0}">
@@ -297,8 +298,30 @@
       return null;
     }
 
+    // 跨域 SSO：优先从 URL hash (#token=xxx) 拿，其次 localStorage，最后才是 cookie
+    function _getDiscuzToken() {
+      try {
+        var hash = location.hash || '';
+        var m = hash.match(/[#&]token=([^&]+)/);
+        if (m) {
+          var t = decodeURIComponent(m[1]);
+          try { localStorage.setItem('discuz_token', t); } catch (e) {}
+          // 从 URL 上抹掉 token，避免被复制分享
+          try {
+            var clean = hash.replace(/([#&])token=[^&]+&?/, '$1').replace(/[#&]$/, '');
+            history.replaceState(null, '', location.pathname + location.search + (clean && clean !== '#' ? clean : ''));
+          } catch (e) {}
+          return t;
+        }
+        var ls = null;
+        try { ls = localStorage.getItem('discuz_token'); } catch (e) {}
+        if (ls) return ls;
+      } catch (e) {}
+      return _getCookie('discuz_token') || '';
+    }
+
     function createClient(url) {
-      var token = _getCookie('discuz_token') || '';
+      var token = _getDiscuzToken();
       // Let socket.io pick proper transport and protocol; pass token via `auth`
       try {
         var socket = io.connect(location.protocol + '//' + url, { auth: { token: token } });
@@ -332,7 +355,11 @@
           where: 0,//0登录界面 1大厅 2房间,
           isAutoLogin: false,
           guestMode: false,// 选择以访客身份进入
-          discuzLoginUrl: '/member.php?mod=logging&action=login',
+          // 跨域 SSO 桥接入口：论坛域名上的 bridge.php
+          discuzLoginUrl: 'https://zwwx.club/discuz-sso/bridge.php',
+          // 我的战绩
+          myScore: null,
+          topList: [],
           posId: '',//座位号
           deskId: '',//桌号
           desks: [],
@@ -401,13 +428,15 @@
           };
 
           // if Discuz token exists, mark as auto-login and the server will validate it
-          var _token = _getCookie('discuz_token');
+          var _token = _getDiscuzToken();
           if (_token) {
             this.isAutoLogin = true;
             // fallback to manual login if token doesn't produce LOGIN_SUCCESS quickly
             setTimeout(function () {
               if (this.where === 0) {
                 this.isAutoLogin = false;
+                // token 可能过期，清掉避免下次仍然卡住
+                try { localStorage.removeItem('discuz_token'); } catch (e) {}
               }
             }.bind(this), 5000);
           }
@@ -423,6 +452,11 @@
             this.desks = data;
             this.where = 1;
             layer.closeAll();
+          }.bind(this));
+
+          // 服务端推送的个人战绩
+          this.client.on('MY_SCORE', function (row) {
+            this.myScore = row || null;
           }.bind(this));
 
           this.client.on('LOGIN_FAIL', function (data) {
@@ -733,11 +767,93 @@
         }.bind(this));
       },
       methods: {
+        openStats: function () {
+          var self = this;
+          // 异步拉取排行榜
+          self.topList = [];
+          try {
+            fetch('/api/score/top?limit=20').then(function (r) { return r.json(); }).then(function (rows) {
+              self.topList = Array.isArray(rows) ? rows : [];
+            }).catch(function () {});
+          } catch (e) {}
+          var html = '<div id="stats-panel" style="padding:16px 18px;min-width:340px;max-width:90vw;font-family:inherit;">';
+          if (self.myScore && self.myScore.uid) {
+            var s = self.myScore;
+            var games = s.games || 0;
+            var winRate = games ? Math.round((s.wins || 0) * 1000 / games) / 10 : 0;
+            var lordRate = s.landlord_games ? Math.round((s.landlord_wins || 0) * 1000 / s.landlord_games) / 10 : 0;
+            html += '<div style="font-size:16px;font-weight:bold;margin-bottom:8px;">' + (s.username || '我') + ' · 战绩</div>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+              '<tr><td style="padding:4px 0;color:#888;">积分</td><td style="text-align:right;font-weight:bold;">' + (s.score | 0) + '</td></tr>' +
+              '<tr><td style="padding:4px 0;color:#888;">总局数</td><td style="text-align:right;">' + games + '</td></tr>' +
+              '<tr><td style="padding:4px 0;color:#888;">胜 / 负</td><td style="text-align:right;">' + (s.wins | 0) + ' / ' + (s.losses | 0) + '</td></tr>' +
+              '<tr><td style="padding:4px 0;color:#888;">胜率</td><td style="text-align:right;">' + winRate + '%</td></tr>' +
+              '<tr><td style="padding:4px 0;color:#888;">地主局数</td><td style="text-align:right;">' + (s.landlord_games | 0) + '</td></tr>' +
+              '<tr><td style="padding:4px 0;color:#888;">地主胜率</td><td style="text-align:right;">' + lordRate + '%</td></tr>' +
+              '</table>';
+          } else {
+            html += '<div style="font-size:14px;color:#666;line-height:1.6;">' +
+              '您当前为<strong>访客</strong>身份，不记录战绩。<br>' +
+              '请使用 Discuz 账号登录后再查看。' +
+              '</div>';
+          }
+          html += '<div id="stats-top" style="margin-top:14px;">' +
+            '<div style="font-size:14px;font-weight:bold;margin-bottom:6px;">积分榜 TOP 20</div>' +
+            '<div style="font-size:12px;color:#999;">加载中…</div>' +
+            '</div>';
+          if (self.myScore && self.myScore.uid) {
+            html += '<div style="margin-top:14px;text-align:right;">' +
+              '<a href="javascript:;" id="stats-logout" style="color:#888;font-size:12px;">退出登录</a>' +
+              '</div>';
+          }
+          html += '</div>';
+          var idx = layer.open({
+            type: 1,
+            title: '战绩 / 积分榜',
+            shadeClose: true,
+            area: ['auto', 'auto'],
+            content: html
+          });
+          // 填充排行榜
+          var fill = function () {
+            var box = document.getElementById('stats-top');
+            if (!box) return;
+            if (!self.topList.length) {
+              box.innerHTML = '<div style="font-size:14px;font-weight:bold;margin-bottom:6px;">积分榜 TOP 20</div>' +
+                '<div style="font-size:12px;color:#999;">暂无数据</div>';
+              return;
+            }
+            var rows = self.topList.map(function (r, i) {
+              return '<tr><td style="padding:2px 6px;color:#888;width:30px;text-align:right;">' + (i + 1) + '</td>' +
+                '<td style="padding:2px 6px;">' + (r.username || ('uid#' + r.uid)) + '</td>' +
+                '<td style="padding:2px 6px;text-align:right;font-weight:bold;">' + (r.score | 0) + '</td>' +
+                '<td style="padding:2px 6px;text-align:right;color:#888;">' + (r.wins | 0) + '/' + (r.games | 0) + '</td></tr>';
+            }).join('');
+            box.innerHTML = '<div style="font-size:14px;font-weight:bold;margin-bottom:6px;">积分榜 TOP 20</div>' +
+              '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+              '<thead><tr style="color:#888;"><th></th><th style="text-align:left;">玩家</th><th style="text-align:right;">积分</th><th style="text-align:right;">胜/总</th></tr></thead>' +
+              '<tbody>' + rows + '</tbody></table>';
+          };
+          // 轮询一次，等 fetch 完成
+          var tries = 0;
+          var timer = setInterval(function () {
+            if (self.topList.length || tries++ > 20) { clearInterval(timer); fill(); }
+          }, 200);
+          // 退出登录
+          setTimeout(function () {
+            var a = document.getElementById('stats-logout');
+            if (a) a.onclick = function () {
+              try { localStorage.removeItem('discuz_token'); } catch (e) {}
+              layer.close(idx);
+              location.reload();
+            };
+          }, 0);
+        },
         goDiscuzLogin: function () {
-          // 携带返回地址，登录完跳回游戏页
-          var back = encodeURIComponent(location.href);
+          // 跨域桥接：论坛登录 → 生成 JWT → 302 回本页并带 #token=xxx
+          var back = location.protocol + '//' + location.host + '/';
           var url = this.discuzLoginUrl;
-          url += (url.indexOf('?') >= 0 ? '&' : '?') + 'referer=' + back;
+          url += (url.indexOf('?') >= 0 ? '&' : '?') + 'redirect=' + encodeURIComponent(back);
           location.href = url;
         },
         login: function () {
