@@ -1,4 +1,9 @@
 <?php
+// 调试期开错误显示（上线后可以注释这两行）
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
+use Firebase\JWT\JWT;
 /**
  * Discuz → Doudizhu 跨域 SSO 桥接
  *
@@ -66,7 +71,6 @@ if (!class_exists('Firebase\\JWT\\JWT')) {
     echo "\nsearched:\n - " . $discuz_root . "/vendor/autoload.php\n - " . __DIR__ . "/vendor/autoload.php\n - " . $discuz_root . "/vendor/firebase/php-jwt/src/JWT.php\n";
     exit;
 }
-use Firebase\JWT\JWT;
 
 // ====== 取 secret ======
 $SSO_SECRET = defined('DISCUZ_SSO_SECRET') ? DISCUZ_SSO_SECRET : (getenv('JWT_SECRET') ?: '');
