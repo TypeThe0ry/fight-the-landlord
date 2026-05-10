@@ -56,7 +56,10 @@ if (!isset($parts['scheme']) || !in_array($parts['scheme'], ['http', 'https'], t
 
 // ====== 引导 Discuz ======
 define('CURSCRIPT', 'index');
+define('APPTYPEID', 0);
 $discuz_root = dirname(__DIR__);
+// 必须切到 Discuz 根目录，否则 class_core 用相对路径加载 config 会失败，cookie 也读不到
+chdir($discuz_root);
 require $discuz_root . '/source/class/class_core.php';
 $discuz = C::app();
 $discuz->init();
