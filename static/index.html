@@ -23,11 +23,11 @@
           雀阁
         </div>
         <template v-if="isAutoLogin">
-          <div class="auto-login">正在使用 Discuz 登录，请稍候…</div>
+          <div class="auto-login">正在使用 ZWWX.CLUB 登录，请稍候…</div>
         </template>
         <template v-else-if="!guestMode">
           <div class="login-form" style="display:flex;flex-direction:column;gap:12px;align-items:center;">
-            <button @click="goDiscuzLogin">使用 Discuz 账号登录</button>
+            <button @click="goDiscuzLogin">使用 ZWWX.CLUB 账号登录</button>
             <button class="btn-ghost" @click="guestMode = true">以访客身份进入</button>
           </div>
         </template>
