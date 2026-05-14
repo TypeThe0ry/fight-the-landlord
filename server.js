@@ -52,6 +52,45 @@ const db = require('./db.js');
 // 底分（每分对应多少积分）。可通过环境变量调整。
 const SCORE_BASE = Number(process.env.SCORE_BASE || 1);
 
+// ========== 安全加固：API 防滥用 ==========
+// 设计原则：所有"加分/扣分"都只能由服务端 socket 流程里的 game.getResult() 触发，
+// 任何 HTTP 写入接口一律不存在；下方中间件确保即使将来误添加也不会被利用。
+//
+// 1) 任何非 GET 的 /api/* 请求一律拒绝（白名单只允许 GET）。
+//    这就把 `POST /api/scores`、`POST /api/score/...`、`PUT /api/...` 等全部封死。
+app.use('/api', (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return res.status(405).type('application/json').send(JSON.stringify({
+      error: 'method_not_allowed',
+      message: '本服务的积分写入只能由对局结算在服务端触发，不接受任何 HTTP 写入请求。'
+    }));
+  }
+  // 不挂 body parser，确保任何 JSON body 都不会被解析或使用
+  next();
+});
+
+// 2) /api/* 简单速率限制（按 IP，每 10 秒 30 次），抵御暴力探测/扫表。
+const __apiHits = new Map();
+app.use('/api', (req, res, next) => {
+  const ip = (req.headers['x-forwarded-for'] || req.ip || req.connection.remoteAddress || '').toString().split(',')[0].trim();
+  const now = Date.now();
+  const winMs = 10 * 1000;
+  const max = 30;
+  const arr = (__apiHits.get(ip) || []).filter(t => now - t < winMs);
+  arr.push(now);
+  __apiHits.set(ip, arr);
+  // 顺手清理太久没活动的 IP，避免内存膨胀
+  if (__apiHits.size > 5000) {
+    for (const [k, v] of __apiHits) {
+      if (!v.length || now - v[v.length - 1] > 5 * 60 * 1000) __apiHits.delete(k);
+    }
+  }
+  if (arr.length > max) {
+    return res.status(429).type('application/json').send(JSON.stringify({ error: 'rate_limited' }));
+  }
+  next();
+});
+
 // HTTP：查询自己积分（需 ?token=JWT）
 app.get('/api/score/me', (req, res) => {
   const token = req.query.token || (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
@@ -85,6 +124,13 @@ app.get('/api/sso/health', (req, res) => {
     warning: isDefault ? 'JWT_SECRET 未配置，使用占位串' : null
   });
 });
+
+// 3) /api/* 兜底 404：任何未在上方显式声明的 /api/* GET 路径，统一返回 JSON 404。
+//    例如：GET /api/scores、GET /api/admin 等。
+app.all(/^\/api(\/.*)?$/, (req, res) => {
+  res.status(404).type('application/json').send(JSON.stringify({ error: 'not_found' }));
+});
+
 const BOT_NAMES = ['玉狐', '青龙', '白鹭', '墨鸢', '朱雀', '碧波', '苍髯'];
 function createDeskList(n) {
   n = n || 50;
