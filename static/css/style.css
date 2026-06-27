@@ -1871,12 +1871,13 @@ button.btn-ghost {
   z-index: 34;
 }
 .room-guandan .card-ctx-left {
-  top: calc(50vh - var(--card-h) / 2);
-  left: calc(var(--table-left-safe) + clamp(350px, 22vw, 520px));
+  /* 掼蛋四人局左右两家的出牌区错层摆放，避免大牌型时上家/下家互相覆盖。 */
+  top: calc(50vh - var(--card-h) - 52px);
+  left: calc(var(--table-left-safe) + clamp(260px, 18vw, 420px));
 }
 .room-guandan .card-ctx-right {
-  top: calc(50vh - var(--card-h) / 2);
-  right: calc(var(--table-right-safe) + clamp(350px, 22vw, 520px));
+  top: calc(50vh + 42px);
+  right: calc(var(--table-right-safe) + clamp(260px, 18vw, 420px));
 }
 @media (max-width: 720px) {
   .score-board { top: 150px; left: 8px; width: 164px; min-width: 0; max-width: 164px; padding: 8px 10px; }
@@ -1988,12 +1989,12 @@ button.btn-ghost {
   .card-ctx-top     { top: calc(var(--table-top-safe) + var(--card-h) + 24px); }
   .room-guandan .card-ctx-top { left: 50%; top: calc(var(--table-top-safe) + var(--card-h) + 10px); }
   .room-guandan .card-ctx-left {
-    top: calc(50vh - var(--card-h) / 2);
-    left: calc(var(--table-left-safe) + 290px);
+    top: calc(50vh - var(--card-h) - 42px);
+    left: calc(var(--table-left-safe) + 220px);
   }
   .room-guandan .card-ctx-right {
-    top: calc(50vh - var(--card-h) / 2);
-    right: calc(var(--table-right-safe) + 290px);
+    top: calc(50vh + 34px);
+    right: calc(var(--table-right-safe) + 220px);
   }
   .card-ctx-self    { top: auto; bottom: 184px; }
   .player-left      { left: calc(var(--table-left-safe) - 118px); top: calc(50vh - 58px); }
