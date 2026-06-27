@@ -727,7 +727,7 @@ button.btn-ghost {
   left: 50%;
   transform: translateX(-50%);
   z-index: 42;
-  width: min(720px, calc(100vw - 220px));
+  width: min(720px, calc(100vw - 360px));
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -789,7 +789,7 @@ button.btn-ghost {
 /* 离开房间按钮 */
 .btn-exit-room {
   position: absolute;
-  top: 18px; right: 18px;
+  top: 18px; left: 18px;
   z-index: 50;
   padding: 0 18px;
   height: 36px;
@@ -1252,7 +1252,7 @@ button.btn-ghost {
   left: clamp(18px, calc(50vw - 370px), 430px);
   right: auto;
   top: auto;
-  bottom: 60px;
+  bottom: calc(44px + var(--card-h) + 10px);
   width: 96px;
   height: 108px;
   z-index: 24;
@@ -1279,7 +1279,7 @@ button.btn-ghost {
   left: clamp(18px, calc(50vw - 370px), 430px) !important;
   right: auto !important;
   top: auto !important;
-  bottom: 60px !important;
+  bottom: calc(44px + var(--card-h) + 10px) !important;
   transform: none !important;
 }
 .room-guandan .player-self-ctx,
@@ -1975,7 +1975,7 @@ button.btn-ghost {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .room-topbar {
-    width: min(620px, calc(100vw - 180px));
+    width: min(620px, calc(100vw - 300px));
   }
   .card-group-left  { left: var(--table-left-safe); }
   .card-group-right { right: var(--table-right-safe); }
@@ -1998,7 +1998,7 @@ button.btn-ghost {
   }
   .card-ctx-self    { top: auto; bottom: 184px; }
   .player-left      { left: calc(var(--table-left-safe) - 118px); top: calc(50vh - 58px); }
-  .player-self-ctx  { left: clamp(16px, calc(50vw - 360px), 170px); right: auto; top: auto; bottom: 56px; }
+  .player-self-ctx  { left: clamp(16px, calc(50vw - 360px), 170px); right: auto; top: auto; bottom: calc(44px + var(--card-h) + 10px); }
   .player-right     { right: calc(var(--table-right-safe) - 118px); top: calc(50vh - 58px); }
   .player-top       { top: calc(var(--table-top-safe) + var(--card-h) + 22px); }
   .room-guandan .player-top {
@@ -2171,7 +2171,8 @@ button.btn-ghost {
     min-width: 0;
     max-width: 168px;
   }
-  .room-playing .score-board {
+  .room-playing .score-board,
+  .room-playing .guandan-board {
     display: none;
   }
   .msg-box.collapsed { width: 180px; left: auto; }
@@ -2182,7 +2183,21 @@ button.btn-ghost {
   .clock { width: 46px; height: 46px; font-size: 16px; }
   .login-panel { padding: 32px 22px 26px; }
   .login-panel .title { font-size: 28px; }
-  .btn-exit-room { top: 8px; }
+  .btn-exit-room { top: 8px; left: 8px; right: auto; }
+  .user-badge-room {
+    top: 8px;
+    right: 8px;
+    max-width: calc(100vw - 150px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .spec-badge {
+    top: 8px;
+    min-width: 150px;
+    padding: 6px 14px;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+  }
   .guandan-board {
     top: 136px;
     left: 8px;
@@ -2226,6 +2241,11 @@ button.btn-ghost {
   .guandan-order {
     display: none;
   }
+}
+
+@media (max-width: 768px) and (max-height: 360px) {
+  .btn-group { bottom: 118px; }
+  .card-ctx-self { bottom: 206px; }
 }
 @media (max-width: 480px) {
   .room {
@@ -2322,7 +2342,8 @@ button.btn-ghost {
   .room-playing .player-right {
     display: none;
   }
-  .btn-exit-room { top: 8px; }
+  .btn-exit-room { top: 8px; left: 8px; right: auto; padding: 0 12px; letter-spacing: 0.08em; }
+  .user-badge-room { max-width: 110px; }
   .player-wrapper { width: 92px; height: 100px; }
   .player-photo { width: 60px; height: 60px; }
   .player-wrapper.player-self { bottom: 188px; }
@@ -2466,7 +2487,7 @@ button.btn-ghost {
 /* 观战徽标与提示 */
 .spec-badge {
   position: fixed;
-  top: 14px;
+  top: 66px;
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 28px;

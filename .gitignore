@@ -3,3 +3,6 @@ node_modules/
 config.json
 sso-secret.txt
 .env
+
+# Local verification artifacts
+artifacts/
