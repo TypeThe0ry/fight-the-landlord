@@ -1781,6 +1781,10 @@ button.btn-ghost {
   font-size: 13px;
   color: var(--jade-100);
 }
+.guandan-teams {
+  display: flex;
+  flex-direction: column;
+}
 .guandan-team-row span {
   display: block;
   max-width: 150px;
@@ -1842,10 +1846,15 @@ button.btn-ghost {
 }
 .room-guandan .player-top {
   position: fixed;
-  left: calc(50vw - 400px);
-  top: calc(var(--table-top-safe) + var(--card-h) + 38px);
-  transform: scale(0.76);
-  transform-origin: top left;
+  left: 50%;
+  top: calc(var(--table-top-safe) + var(--card-h) + 30px);
+  transform: translateX(-50%) scale(0.92);
+  transform-origin: top center;
+  z-index: 28;
+}
+.room-guandan .player-top .team-tag {
+  top: -8px;
+  right: -14px;
 }
 .room-guandan .player-right {
   right: calc(var(--table-right-safe) - 124px);
@@ -1990,11 +1999,11 @@ button.btn-ghost {
   .player-right     { right: calc(var(--table-right-safe) - 118px); top: calc(50vh - 58px); }
   .player-top       { top: calc(var(--table-top-safe) + var(--card-h) + 22px); }
   .room-guandan .player-top {
-    display: none;
-    left: max(190px, calc(50vw - 315px));
-    top: calc(var(--table-top-safe) + var(--card-h) + 26px);
-    transform: scale(0.68);
-    transform-origin: top left;
+    display: block;
+    left: 50%;
+    top: calc(var(--table-top-safe) + var(--card-h) + 22px);
+    transform: translateX(-50%) scale(0.78);
+    transform-origin: top center;
   }
   .icon-group-left {
     top: 20px;

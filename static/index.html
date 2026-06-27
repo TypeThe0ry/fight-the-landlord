@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta name="theme-color" content="#0e2422">
   <title>雀阁 · 纸牌房</title>
@@ -22,13 +22,13 @@
         <div class="row title">
           雀阁
         </div>
-        <template v-if="isAutoLogin">
+        <template v-if="authMode === 'discuz' && isAutoLogin">
           <div class="auto-login">正在使用 ZWWX.CLUB 登录，请稍候…</div>
           <div class="row" style="margin-top:14px;text-align:center;">
             <a href="javascript:;" @click="cancelAutoLogin()" style="color:#888;font-size:12px;">迟迟无法进入？点此取消并改用其他方式</a>
           </div>
         </template>
-        <template v-else-if="!guestMode">
+        <template v-else-if="authMode === 'discuz' && !guestMode">
           <div v-if="loginError" class="login-error" style="margin:8px 0 12px;padding:10px 12px;background:#3b1f1f;border:1px solid #8a3a3a;color:#ffb3b3;border-radius:6px;font-size:13px;line-height:1.5;text-align:left;">
             <div style="font-weight:bold;margin-bottom:4px;">登录失败</div>
             <div>{{loginError}}</div>
@@ -45,7 +45,7 @@
               @click="login">入  座</button>
           </div>
           <div class="row" style="margin-top:8px;text-align:center;">
-            <a href="javascript:;" @click="guestMode = false" style="color:#888;font-size:12px;">返回登录方式选择</a>
+            <a v-if="authMode === 'discuz'" href="javascript:;" @click="guestMode = false" style="color:#888;font-size:12px;">返回登录方式选择</a>
           </div>
         </template>
       </div>
@@ -492,7 +492,8 @@
 
           where: 0,//0登录界面 1大厅 2房间,
           isAutoLogin: false,
-          guestMode: false,// 选择以访客身份进入
+          authMode: getURLParam('auth') === 'guest' ? 'guest' : 'discuz',// 登录分支：discuz=论坛/访客，guest=普通游客
+          guestMode: getURLParam('auth') === 'guest',// 选择以访客身份进入
           loginError: '',//登录错误持久横幅
           debugMode: /[?&]debug=1\b/.test(location.search),//?debug=1 显示调试信息
           tokenSnippet: '',//最近一次握手用的 token 前后段（仅在 debug 显示）
@@ -602,7 +603,7 @@
           });
 
           // if Discuz token exists, mark as auto-login and the server will validate it
-          var _token = _getDiscuzToken();
+          var _token = this.authMode === 'discuz' ? _getDiscuzToken() : '';
           if (_token) {
             this.isAutoLogin = true;
             // debug 模式记录 token 片段

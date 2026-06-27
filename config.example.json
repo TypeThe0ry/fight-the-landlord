@@ -10,5 +10,6 @@
   "DB_TABLE_PREFIX": "pre_",
   "DB_DISABLE": 0,
   "SCORE_BASE": 1,
-  "DISCUZ_AVATAR_BASE": "https://zwwx.club/uc_server/avatar.php?uid={uid}&size=middle"
+  "DISCUZ_AVATAR_BASE": "https://zwwx.club/uc_server/avatar.php?uid={uid}&size=middle",
+  "_LOGIN_MODES": "默认首页保留 Discuz 登录/游客。面向普通玩家可使用 /?auth=guest 直接显示游客用户名输入。"
 }
