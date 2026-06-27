@@ -1044,6 +1044,29 @@
       methods: {
         openStats: function () {
           var self = this;
+          var escapeHtml = function (value) {
+            return String(value == null ? '' : value).replace(/[&<>"'\/]/g, function (ch) {
+              return ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+                '/': '&#47;'
+              })[ch];
+            });
+          };
+          var formatInt = function (value) {
+            var n = Number(value);
+            return Number.isFinite(n) ? (n | 0) : 0;
+          };
+          var formatGames = function (value) {
+            var n = Number(value);
+            return Number.isFinite(n) && n > 0 ? (n | 0) : 0;
+          };
+          var formatWinRate = function (wins, gamesN) {
+            return gamesN ? Math.round(formatGames(wins) * 1000 / gamesN) / 10 : 0;
+          };
           var games = ['doudizhu', 'guandan'];
           var labels = { doudizhu: '斗地主', guandan: '掼蛋' };
           self.topLists = { doudizhu: [], guandan: [] };
@@ -1060,7 +1083,7 @@
             }
           });
           var html = '<div id="stats-panel" class="stats-panel">' +
-            '<div class="stats-head"><strong>' + ((self.myUser && self.myUser.username) || '访客') + '</strong><span>分玩法独立积分</span></div>' +
+            '<div class="stats-head"><strong>' + escapeHtml((self.myUser && self.myUser.username) || '访客') + '</strong><span>分玩法独立积分</span></div>' +
             '<div id="stats-mine" class="stats-mine"></div>' +
             '<div id="stats-top" class="stats-grid"><div class="stats-loading">积分榜加载中...</div></div>';
           if (self.myUser && self.myUser.uid) {
@@ -1078,17 +1101,19 @@
             var s = self.myScores[gt];
             if (!self.myUser || !self.myUser.uid) return '<div class="stats-card"><b>' + labels[gt] + '</b><em>访客不记录战绩</em></div>';
             if (!s) return '<div class="stats-card"><b>' + labels[gt] + '</b><em>暂无对局记录</em></div>';
-            var gamesN = s.games || 0;
-            var winRate = gamesN ? Math.round((s.wins || 0) * 1000 / gamesN) / 10 : 0;
-            return '<div class="stats-card"><b>' + labels[gt] + '</b><strong>' + (s.score | 0) + '</strong><span>' + (s.wins | 0) + '胜 / ' + gamesN + '局 · ' + winRate + '%</span></div>';
+            var gamesN = formatGames(s.games);
+            var winsN = formatGames(s.wins);
+            var winRate = formatWinRate(winsN, gamesN);
+            return '<div class="stats-card"><b>' + labels[gt] + '</b><strong>' + formatInt(s.score) + '</strong><span>' + winsN + '胜 / ' + gamesN + '局 · ' + winRate + '%</span></div>';
           };
           var board = function (gt) {
             var rows = self.topLists[gt] || [];
             if (!rows.length) return '<div class="stats-board"><h4>' + labels[gt] + ' TOP 20</h4><div class="stats-empty">暂无数据</div></div>';
             var trs = rows.map(function (r, i) {
-              var gamesN = r.games || 0;
-              var rate = gamesN ? Math.round((r.wins || 0) * 1000 / gamesN) / 10 : 0;
-              return '<tr><td>' + (i + 1) + '</td><td>' + (r.username || ('uid#' + r.uid)) + '</td><td>' + (r.score | 0) + '</td><td>' + rate + '%</td><td>' + gamesN + '</td></tr>';
+              var gamesN = formatGames(r.games);
+              var rate = formatWinRate(r.wins, gamesN);
+              var playerName = r.username || ('uid#' + r.uid);
+              return '<tr><td>' + (i + 1) + '</td><td>' + escapeHtml(playerName) + '</td><td>' + formatInt(r.score) + '</td><td>' + rate + '%</td><td>' + gamesN + '</td></tr>';
             }).join('');
             return '<div class="stats-board"><h4>' + labels[gt] + ' TOP 20</h4><table><thead><tr><th>#</th><th>玩家</th><th>积分</th><th>胜率</th><th>局数</th></tr></thead><tbody>' + trs + '</tbody></table></div>';
           };
