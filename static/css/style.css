@@ -1846,18 +1846,7 @@ button.btn-ghost {
 }
 .room-guandan .player-top {
   position: fixed;
-  left: 50%;
-  top: calc(var(--table-top-safe) + var(--card-h) + 30px);
-  transform: translateX(-50%) scale(0.92);
-  transform-origin: top center;
-  z-index: 28;
-}
-.room-guandan .player-top .team-tag {
   top: -8px;
-  right: -14px;
-}
-.room-guandan .player-right {
-  right: calc(var(--table-right-safe) - 124px);
   top: calc(50vh - 62px);
 }
 .room-playing:not(.room-guandan) .player-right {
@@ -2000,13 +1989,6 @@ button.btn-ghost {
   .player-top       { top: calc(var(--table-top-safe) + var(--card-h) + 22px); }
   .room-guandan .player-top {
     display: block;
-    left: 50%;
-    top: calc(var(--table-top-safe) + var(--card-h) + 22px);
-    transform: translateX(-50%) scale(0.78);
-    transform-origin: top center;
-  }
-  .icon-group-left {
-    top: 20px;
     left: auto;
     right: -50px;
     transform: scale(0.72);
