@@ -276,6 +276,33 @@ function getGuandanCandidates(game, posId, leadOnly) {
     });
 }
 
+
+function evaluateDoudizhuHand(cards) {
+  const groups = groupCardsByValue(cards || []);
+  const values = Object.keys(groups).map(Number);
+  let power = 0;
+  values.forEach(v => {
+    const n = groups[v].length;
+    if (v >= 16) power += 4;
+    else if (v === 15) power += 3 * n;
+    else if (v >= 13) power += 1.5 * n;
+    if (n >= 4) power += 7;
+    else if (n === 3) power += 2;
+  });
+  if (groups[16] && groups[17]) power += 8;
+  return power;
+}
+
+function shouldCallDoudizhuScore(cards, ctxScore) {
+  if (!ctxScore || !ctxScore.length) return 0;
+  const maxScore = Math.max.apply(null, ctxScore);
+  const power = evaluateDoudizhuHand(cards);
+  if (power >= 22 && ctxScore.indexOf(3) >= 0) return 3;
+  if (power >= 16 && ctxScore.indexOf(2) >= 0) return 2;
+  if (power >= 11 && ctxScore.indexOf(1) >= 0) return 1;
+  return (power >= 20 && maxScore) ? maxScore : 0;
+}
+
 function time() {
   return (new Date()).toLocaleTimeString();
 }
@@ -718,9 +745,10 @@ const proto = {
     const game = this.gameDatas[deskId];
     if (!game) return;
     const ctxScore = game.getContextScore() || [];
-    let score = 0;
-    if (Math.random() < 0.65 && ctxScore.length) {
-      score = ctxScore[Math.floor(Math.random() * ctxScore.length)];
+    const hand = game.getCardsByPosId(posId) || [];
+    let score = shouldCallDoudizhuScore(hand, ctxScore);
+    if (!score && Math.random() < 0.12 && ctxScore.length) {
+      score = ctxScore[0];
     }
     const status = game.next(posId, score).getStatus();
     if (status == 1) {
@@ -757,7 +785,12 @@ const proto = {
       len: last.len, key: last.key, type: last.type, ctxPos: 'other'
     };
     let picks = [];
-    try { picks = (AISuggest.suggest(hand, lastInfo)) || []; } catch (e) { picks = []; }
+    const allOut = game.validate(posId, handRaw);
+    if (allOut && allOut.status) {
+      picks = handRaw.map(c => ({ value: c.value, type: c.type }));
+    } else {
+      try { picks = (AISuggest.suggest(hand, lastInfo)) || []; } catch (e) { picks = []; }
+    }
     // 解析为真实牌实例（按下标占用避免重复）
     const used = new Set();
     let data = [];
